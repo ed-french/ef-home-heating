@@ -130,7 +130,7 @@ class Settings(object):
                 s.enttype="float"
                 s.value=str(newvalue)
 
-            elif type(newvalue)==string:
+            elif type(newvalue)==str:
                 s.enttype="string"
                 s.value=newvalue
             elif type(newvalue)==bool:
