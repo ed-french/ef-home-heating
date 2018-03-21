@@ -123,17 +123,17 @@ class Settings(object):
             s=SettingStore()
             s.keyname=keyname
             
-            if type(newvalue) is int:
+            if type(newvalue)==int:
                 s.enttype="int"
                 s.value=str(newvalue)
-            elif type(newvalue) is float:
+            elif type(newvalue)==float:
                 s.enttype="float"
                 s.value=str(newvalue)
 
-            elif type(newvalue) is string:
+            elif type(newvalue)==string:
                 s.enttype="string"
                 s.value=newvalue
-            elif type(newvalue) is bool:
+            elif type(newvalue)==bool:
                 s.enttype="boolean"
                 s.value=str(newvalue)
             else:
