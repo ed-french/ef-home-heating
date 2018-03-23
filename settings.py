@@ -29,6 +29,14 @@
         If the object presented is a string, a float or an int it is stored as a string representation of such and enttype is set accordingly
         otherwise, e.g. for more complex objects a jsonpickled version is stored (to allow human editing when settings is visited)
 
+        add a settings handle to the app.yaml like this:
+
+        - url: /settings*
+          script: settings.app
+
+          
+
+
         TO DO:
             Switch to storing incoming objects as json serialized versions of themselves, so anyting that will json.dumps will be stored OK
             Then recovery is returns whatever you get from json.loads
@@ -366,7 +374,7 @@ class ModifySetting(webapp2.RequestHandler):
         elif enttype=="json":
             value=valtext
         elif enttype=="boolean":
-            assert(valtext in ["False","True"],"Wierd error where somehow a non boolean value was returned from teh form")
+            assert valtext in ["False","True"],"Wierd error where somehow a non boolean value was returned from teh form"
             value=valtext
         else:
             raise Exception("Unexpected type from form entry- %s - strange" % enttype)
@@ -511,6 +519,7 @@ app = webapp2.WSGIApplication([
     ('/settings/createnewentry/',CreateNewEntry),
     ('/settings', MainHandler)
 ], debug=True)
+logging.info("Settings available at /settings")
 
 
 

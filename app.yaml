@@ -3,5 +3,7 @@ api_version: 1
 threadsafe: true
 
 handlers:
+- url: /settings*
+  script: settings.app
 - url: /.*
   script: main.app
