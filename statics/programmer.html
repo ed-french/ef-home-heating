@@ -39,83 +39,208 @@
     border-radius: 50%;
     background: #4CAF50;
     cursor: pointer;
+	clear:both;
+}
+
+#weekdays_title {
+	//width:50%;
+	float:left;
+}
+#weekends_title {
+	//width:50%;
+	float:right;
+}
+.timename {
+	float:left;
+}
+.texttemp {
+	float:right;
+}
+.hiddentab {
+	display:none;
+	background-color:black;
+}
+.visibletab {
+	display: block;
+	background-color:rgb(60,0,120);
+	margin:0px;
+	padding:3px;
+}
+#headings {
+	width:100%;
+	font-family:sans-serif;
+	margin:0px;
+	font-size:20px
+	
+}
+body {
+	background-color:black;
+	color:white;
+}
+.highlighted_title {
+	font-weight:bold;
+	color:white;
+	background-color:rgb(60,0,120);
+	margin:0px;
+	padding:5px;
+}
+.inactive_title {
+	font-weight:normal;
+	color:rgb(200,200,200);
+	background-color:black;
+	margin:0px;
+	padding:5px;
+}
+.slidecontainer {
+	margin:0px;
+	padding:3px;
 }
 </style>
 </head>
 <body>
 
-<h1>Temperature levels</h1>
+<h1>Temperature settings</h1>
+<div id="headings">
+<div id="weekdays_title" class="highlighted_title" onclick='makeActive("weekdays")'>Weekdays</div>
+<div id="weekends_title" class="inactive_title" onclick='makeActive("weekends")'>Weekends</div><div style="clear:both;"></div></div>
+<div id="weekdays" class="visibletab">
 
-<div id="sliders">
+</div>
+<div id="weekends" class="hiddentab">
 
 </div>
 
 <script>
-//Make all the sliders:
-function getDefaultTemp(hour)
+
+function makeActive(new_active)
 {
-	if (hour<6) {return 17};
-	if (hour<9) {return 23};
-	if (hour<17) {return 21};
-	if (hour<21) {return 23};
-	if (hour<22) {return 20};
-	if (hour<24) {return 19};
-	return 18;
+	console.log("clicked");
+	if (new_active=="weekends")
+	{
+		var old_active="weekdays";
+	} else {
+		var old_active="weekends";
+	}
+	
+	var oldactive_table=document.getElementById(old_active);
+	var newactive_table=document.getElementById(new_active);
+	var oldactive_title=document.getElementById(old_active+"_title");
+	var newactive_title=document.getElementById(new_active+"_title");
+	
+	oldactive_table.className="hiddentab";
+	newactive_table.className="visibletab";
+	oldactive_title.className="inactive_title";
+	newactive_title.className="highlighted_title";
+	
+	
+	
 }
 
 function slid(e){
-var hour=e.target.id.split("_")[0];
-temp=e.target.value;
-var texttemp=document.getElementById(hour+"_texttemp");
-texttemp.textContent=temp;
+	var bits=e.target.id.split("_");
+	var hour=bits[0];
+	var daytype=bits[1];
+	var temp=e.target.value;
+	var texttemp=document.getElementById(hour+"_"+daytype+"_texttemp");
+	texttemp.textContent=temp;
+	//  /setslider?profile=weekdays&hour=12&temp=17.5
+	var url="/setslider?profile="+daytype+"&hour="+hour+"&temp="+temp;
+	var xhttp = new XMLHttpRequest();
+	xhttp.onreadystatechange = function()
+	{
+		if (this.readyState == 4 && this.status == 200)
+		{
+			console.log(this.responseText);
+			var res= JSON.parse(this.responseText);
+			
+			console.log(res);
+
+		}
+	};
+	xhttp.open("GET", url, true);
+	xhttp.send();
 }
 
-times=[5,6,7,8,9,10,12,14,16,17,18,19,20,21,22,23,24,1];//set of times to show
-sliderset=document.getElementById("sliders");
-for (var i=0;i<times.length;i++)
+
+function hoursToTime(hours)
+// Return e.g. "23:30" from 23.5 or "02:00" from 2
 {
-	//Make the container for the slider
-	var div=document.createElement("div");
-	div.id=times[i].toString()+"_container";
-	div.className="slidercontainer";
-	// Add the title
-	var title=document.createElement("span");
-	title.textContent=("0"+times[i].toString()).substr(-2);
-	title.className="timename";
-	div.appendChild(title);
-	//add the text temperature
-	var texttemp=document.createElement("span");
-	var temp=getDefaultTemp(times[i]);
-	texttemp.id=times[i].toString()+"_texttemp";
-	texttemp.textContent=temp.toString();
-	texttemp.className="texttemp";
-	div.append(texttemp);
-	//add the slider
-	var slider=document.createElement("input");
-	slider.type="range";
-	slider.min="5";
-	slider.max="30";
-	slider.value=temp;
-	slider.id=times[i].toString()+"_slider";
-	slider.className="slider";
-	slider.oninput=function(e){slid(e)};
-	div.append(slider);
+	if (typeof(hours)=="string")
+	{
+		hours=float(hours);
+	}
+	var hrs=Math.floor(hours);
+	var mins=Math.floor((hours-hrs)*60);
+	var padhrs=("0"+hrs.toString()).substr(-2);
+	var padmins=("0"+mins.toString()).substr(-2);
 	
+	return padhrs+":"+padmins;
 	
-	sliderset.appendChild(div);
+
 }
 
 
-//console.log("Found: "+slidercontainers.length.toString());
-//sliders=2;
+function makeSliders(profile,daytype)
+{
+	
+	var sliderset=document.getElementById(daytype);
+	for (var i=0;i<profile.length;i++)
+	{
+		//Make the container for the slider
+		var div=document.createElement("div");
+		div.id=profile[i][0].toString()+"_"+daytype+"_container";
+		div.className="slidercontainer";
+		// Add the title
+		var title=document.createElement("span");
+		title.textContent=hoursToTime(profile[i][0]);
+		title.className="timename";
+		div.appendChild(title);
+		//add the text temperature
+		var texttemp=document.createElement("span");
+		var temp=profile[i][1];
+		texttemp.id=profile[i][0].toString()+"_"+daytype+"_texttemp";
+		texttemp.textContent=temp.toString();
+		texttemp.className="texttemp";
+		div.append(texttemp);
+		//add the slider
+		var slider=document.createElement("input");
+		slider.type="range";
+		slider.min="5";
+		slider.max="30";
+		slider.value=temp;
+		slider.id=profile[i][0].toString()+"_"+daytype+"_slider";
+		slider.className="slider";
+		slider.oninput=function(e){slid(e)};
+		div.append(slider);
+		
+		
+		sliderset.appendChild(div);
+	}
+}
+function fetchProfilesAndShow()
+{
+	var url="/bothprofilesjson";
+	var xhttp = new XMLHttpRequest();
+	xhttp.onreadystatechange = function()
+	{
+		if (this.readyState == 4 && this.status == 200)
+		{
+			console.log(this.responseText);
+			var res= JSON.parse(this.responseText);
+			
+			console.log(res);
+			
+			makeSliders(res["weekdays"],"weekdays");
+			makeSliders(res["weekends"],"weekends");
+		}
+	};
+	xhttp.open("GET", url, true);
+	xhttp.send();
 
-//var slider = document.getElementById("myRange");
-//var output = document.getElementById("demo");
-//output.innerHTML = slider.value;
+}
 
-//slider.oninput = function() {
-//  output.innerHTML = this.value;
-//}
+fetchProfilesAndShow();
+
 </script>
 
 </body>

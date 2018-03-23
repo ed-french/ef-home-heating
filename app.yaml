@@ -3,6 +3,11 @@ api_version: 1
 threadsafe: true
 
 handlers:
+- url: /
+  static_files: statics/programmer.html
+  upload: statics/programmer.html
+- url: /statics*
+  static_dir: statics
 - url: /settings*
   script: settings.app
 - url: /.*

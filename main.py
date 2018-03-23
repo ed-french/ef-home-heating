@@ -6,6 +6,8 @@ from datetime import datetime
 """
     Simple Programmable thermostat server-side application
 
+    https://github.com/ed-french/ef-home-heating
+
     Provides GUI to modify the program easily
 
     The main page is provided from a static file
@@ -14,7 +16,9 @@ from datetime import datetime
 
     /bothprofilesjson retreives the temperature profiles and any other settings
 
-    
+    /getcurrenttemp retreives the required temperature right now
+
+    /setslider?profile=weekdays&hour=12&temp=17.5 changes the stored setting
 
 
 
@@ -73,6 +77,11 @@ class TempProfiles:
         self.weekdays=settings.weekdays
         self.weekends=settings.weekends
 
+    def save(self):
+        settings.weekdays=self.weekdays
+        settings.weekends=self.weekends
+        
+
     def hoursToTemp(self,hours,dayprofile):
         # Find the points to use for interpolation either side of this time
         
@@ -122,9 +131,44 @@ class TempProfiles:
         return temp
 
     def bothProfilesAsJSON(self):
-        pair={"weekdays":self.weekdays,"weekends":self.weekends}
+        pair='{"weekdays":%s,"weekends":%s}' % (self.weekdays,self.weekdays)
         return pair
 
+    def setSlider(self,daytype,hour,temp):
+        logging.info("updating a temp for %s o'clock to %s deg c" % (hour,temp))
+        changed=False
+        if daytype=="weekends":
+            logging.info("weekend temp change")
+            for i in range(len(self.weekends)):
+                if str(self.weekends[i][0])==hour:
+                    if not self.weekends[i][1]==temp:
+                        logging.info("Updated weekend temp")
+                        self.weekends[i][1]=float(temp)
+                        changed=True
+                        break
+            else:
+                return "FAILED"
+        else:
+            logging.info("weekday temp change")
+            for i in range(len(self.weekdays)):
+                if str(self.weekdays[i][0])==hour:
+                    logging.info("found time")
+                    if not self.weekdays[i][1]==temp:
+                        logging.info("Updated weekday temp")
+                        self.weekdays[i][1]=float(temp)
+                        changed=True
+                        break
+            else:
+                return "FAILED"
+
+
+
+        if changed:
+            logging.info("updating stored values")
+            self.save()
+            
+        
+        
 
         
                     
@@ -145,9 +189,27 @@ class GetBothProfilesAsJSON(webapp2.RequestHandler):
     def get(self):
         self.response.headers['Contet-Type']='application/json'
         self.response.write(temp_profiles.bothProfilesAsJSON())
+
+class GetCurrentTemperature(webapp2.RequestHandler):
+    def get(self):
+        self.response.headers['Content-Type']='application/json'
+        self.response.write(temp_profiles.tempNow())
+
+class SetSlider(webapp2.RequestHandler):
+    def get(self):
+        profile=self.request.get("profile")
+        hour=self.request.get("hour")
+        temp=self.request.get("temp")
+        logging.info("Processing slider request")
+        temp_profiles.setSlider(profile,hour,temp)
+        self.response.headers['Content-Type']='application/json'
+        self.response.write('"OK"')
+        
         
 app = webapp2.WSGIApplication([
     ('/bothprofilesjson',GetBothProfilesAsJSON),
+    ('/getcurrenttemp',GetCurrentTemperature),
+    ('/setslider',SetSlider),
     ('/', MainPage),
 ], debug=True)
       
