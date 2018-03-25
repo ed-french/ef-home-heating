@@ -198,11 +198,11 @@ class Settings(object):
             #logging.info("No settings loaded yet, doing so now. settings._lastloaded is: %s.." % self._lastloaded)
             self.forcerefresh()
         elif datetime.utcnow()>(self._lastloaded+timedelta(seconds=self._maxage)):
-            #logging.info( "Data in settings older than %s seconds, forcing refresh" % self._maxage)
+            logging.info( "Data in settings older than %s seconds, forcing refresh" % self._maxage)
             self.forcerefresh()
         else:
-            #logging.info("Doing nothing as settings were still fresh")
-            pass
+            logging.info("No refresh needed as _lastloaded = %s and now it's %s" % (self._lastloaded,datetime.utcnow()))
+            
 
         
     def __getattr__(self,keyname):

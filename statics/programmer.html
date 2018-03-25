@@ -95,11 +95,43 @@ body {
 	margin:0px;
 	padding:3px;
 }
+#username {
+float:left;
+}
+#signinaction {
+float:right;
+color:white;
+}
+/* unvisited link */
+a:link {
+    color: white;
+}
+
+/* visited link */
+a:visited {
+    color: pink;
+}
+
+/* mouse over link */
+a:hover {
+    color: hotpink;
+}
+
+/* selected link */
+a:active {
+    color: white;
+}
 </style>
 </head>
 <body>
 
-<h1>Temperature settings</h1>
+<h1>Our Heating</h1>
+<div>
+<span class="subhead">Temp now: {{act_temp}}&deg;</span>
+<span class="subhead">Target: {{targ_temp}}&deg;</span>
+</div>
+<span id="username">{{user}}</span>
+<span id="signinaction"><a href="{{ url|safe }}" class="btn">{{ url_linktext }}</a></span><div style="clear:both;height:20px;"></div>
 <div id="headings">
 <div id="weekdays_title" class="highlighted_title" onclick='makeActive("weekdays")'>Weekdays</div>
 <div id="weekends_title" class="inactive_title" onclick='makeActive("weekends")'>Weekends</div><div style="clear:both;"></div></div>

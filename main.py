@@ -2,6 +2,15 @@ import webapp2,json,logging
 
 from settings import Settings
 from datetime import datetime
+from google.appengine.api import users
+import os
+
+import jinja2
+
+JINJA_ENVIRONMENT = jinja2.Environment(
+    loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
+    extensions=['jinja2.ext.autoescape'],
+    autoescape=True)
 
 """
     Simple Programmable thermostat server-side application
@@ -70,6 +79,7 @@ class TempProfiles:
                        [23,19],
                        [23.5,17]]
         self.weekends=self.weekdays
+        
     def load(self):
         if not settings.weekdays:
             settings.weekdays=self.weekdays
@@ -120,8 +130,8 @@ class TempProfiles:
             dayprofile=self.weekends
             logging.info("It's a weekend")
         # Get the time in the day as hours and fraction of hours
-        hours=now.hour+now.minte/60.0
-        return hoursToTemp(hours,dayprofile)
+        hours=now.hour+now.minute/60.0
+        return self.hoursToTemp(hours,dayprofile)
 
     def tempNow(self):
         # Calculates an interpolated temperature target based
@@ -135,6 +145,7 @@ class TempProfiles:
         return pair
 
     def setSlider(self,daytype,hour,temp):
+
         logging.info("updating a temp for %s o'clock to %s deg c" % (hour,temp))
         changed=False
         if daytype=="weekends":
@@ -178,12 +189,27 @@ class TempProfiles:
 
 class MainPage(webapp2.RequestHandler):
     def get(self):
-        self.response.headers['Content-Type'] = 'text/plain'
-        self.response.write('Hello, World!')
-        self.response.write(settings.weekdays)
 
-        for i in range(0,int(23.75*4)):
-            self.response.write("%s > %s \n" % (i/4.0,temp_profiles.hoursToTemp(i/4.0,settings.weekdays)))
+        user = users.get_current_user()
+        if user:
+            url = users.create_logout_url(self.request.uri)
+            url_linktext = 'Logout'
+        else:
+            url = users.create_login_url(self.request.uri)
+            url_linktext = 'Login'
+            
+        template_values = {
+            'user': user,
+            'url': url,
+            'url_linktext': url_linktext,
+        }
+        if user and "french" in user.email():
+            template_values["targ_temp"]="%.1f" %temp_profiles.tempNow()
+            template_values["act_temp"]=settings.actual_temp
+            template = JINJA_ENVIRONMENT.get_template('statics/programmer.html')
+        else:
+            template = JINJA_ENVIRONMENT.get_template('statics/needtologin.html')
+        self.response.write(template.render(template_values))
             
 class GetBothProfilesAsJSON(webapp2.RequestHandler):
     def get(self):
@@ -197,24 +223,38 @@ class GetCurrentTemperature(webapp2.RequestHandler):
 
 class SetSlider(webapp2.RequestHandler):
     def get(self):
-        profile=self.request.get("profile")
-        hour=self.request.get("hour")
-        temp=self.request.get("temp")
-        logging.info("Processing slider request")
-        temp_profiles.setSlider(profile,hour,temp)
-        self.response.headers['Content-Type']='application/json'
-        self.response.write('"OK"')
+        user = users.get_current_user()
+        email=user.email()
+        logging.info(email)
+        if "french" in email:
+            logging.info("allowed")
+            profile=self.request.get("profile")
+            hour=self.request.get("hour")
+            temp=self.request.get("temp")
+            logging.info("Processing slider request")
+            temp_profiles.setSlider(profile,hour,temp)
+            self.response.headers['Content-Type']='application/json'
+            self.response.write('"OK"')
+        else:
+            self.response.write("NOT LOGGED IN")
+        
+class ReportActual(webapp2.RequestHandler):
+    def get(self):
+        actual_temp=self.request.get("actual_temp")
+        settings.actual_temp=actual_temp
+        
         
         
 app = webapp2.WSGIApplication([
     ('/bothprofilesjson',GetBothProfilesAsJSON),
     ('/getcurrenttemp',GetCurrentTemperature),
     ('/setslider',SetSlider),
+    ('/reportactual',ReportActual),
     ('/', MainPage),
 ], debug=True)
       
 logging.info("Loading up the settings")
-settings=Settings()# Load the application settings
+settings=Settings(maxage=10)# Load the application settings
 settings.refresh()
 logging.info("Set up initial profile")
 temp_profiles=TempProfiles()

@@ -2,13 +2,17 @@ runtime: python27
 api_version: 1
 threadsafe: true
 
+libraries:
+- name: jinja2
+  version: latest
+
 handlers:
-- url: /
-  static_files: statics/programmer.html
-  upload: statics/programmer.html
 - url: /statics*
   static_dir: statics
+  application_readable: true
 - url: /settings*
   script: settings.app
+  login: required
 - url: /.*
   script: main.app
+  login: required
