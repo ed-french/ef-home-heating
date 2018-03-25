@@ -60,6 +60,7 @@ class TempProfiles:
             
     """
     def __init__(self):
+        logging.info("Initializing the temp profiles")
         self.weekdays=[[0,17],
                        [5,17],
                        [6,23],
@@ -78,9 +79,11 @@ class TempProfiles:
                        [22,21],
                        [23,19],
                        [23.5,17]]
+        
         self.weekends=self.weekdays
         
     def load(self):
+        logging.info("initial load of settings from datastore")
         if not settings.weekdays:
             settings.weekdays=self.weekdays
             settings.weekends=self.weekends
@@ -88,6 +91,7 @@ class TempProfiles:
         self.weekends=settings.weekends
 
     def save(self):
+        logging.info("saving the settings")
         settings.weekdays=self.weekdays
         settings.weekends=self.weekends
         
@@ -141,7 +145,7 @@ class TempProfiles:
         return temp
 
     def bothProfilesAsJSON(self):
-        pair='{"weekdays":%s,"weekends":%s}' % (self.weekdays,self.weekdays)
+        pair='{"weekdays":%s,"weekends":%s}' % (self.weekdays,self.weekends)
         return pair
 
     def setSlider(self,daytype,hour,temp):
@@ -189,7 +193,7 @@ class TempProfiles:
 
 class MainPage(webapp2.RequestHandler):
     def get(self):
-
+        logging.info("Main page requested")
         user = users.get_current_user()
         if user:
             url = users.create_logout_url(self.request.uri)
@@ -231,7 +235,7 @@ class SetSlider(webapp2.RequestHandler):
             profile=self.request.get("profile")
             hour=self.request.get("hour")
             temp=self.request.get("temp")
-            logging.info("Processing slider request")
+            logging.info("Processing slider request: profile- {profile}, hour- {hour}, temp- {temp}".format(profile=profile,hour=hour,temp=temp))
             temp_profiles.setSlider(profile,hour,temp)
             self.response.headers['Content-Type']='application/json'
             self.response.write('"OK"')
